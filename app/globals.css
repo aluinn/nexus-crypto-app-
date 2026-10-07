@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+:root {
+  --background: #080a12;
+  --panel: #0f1320;
+  --panel-hover: #151a2b;
+  --input: #182030;
+  --foreground: #e7edf3;
+  --muted: #7d899d;
+  --primary: #825ced;
+  --primary-bright: #9a78f5;
+  --positive: #6ad09d;
+  --negative: #dd524c;
+  --warning: #e89838;
+  --line: rgba(148, 163, 184, 0.16);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-panel: var(--panel);
+  --color-panel-hover: var(--panel-hover);
+  --color-input: var(--input);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-bright: var(--primary-bright);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-warning: var(--warning);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
+  background: var(--background);
+  overflow-x: clip;
+}
+
+html:has(.nexus-intro) {
+  overflow: hidden;
+}
+
+body {
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: rgba(130, 92, 237, 0.35);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-bright);
+  outline-offset: 2px;
+}
+
+.scroll-row {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.35) transparent;
+}
+
+@media (scripting: none) {
+  .nexus-intro {
+    display: none !important;
+  }
+
+  .nexus-landing {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
