@@ -13,6 +13,8 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000). The first visit in a browser session plays the opening wordmark. Later visits in the same session use a short fade. `prefers-reduced-motion` skips the blur, letter-spacing, and long hold.
 
+If the dev server is bound to all interfaces and you open it at `127.0.0.1`, that host must stay in `allowedDevOrigins`. Next.js otherwise refuses the development websocket, and the pages stay on the server-rendered shell.
+
 Other checks:
 
 ```bash
