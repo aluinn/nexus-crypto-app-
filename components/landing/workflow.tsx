@@ -24,26 +24,20 @@ export function Workflow() {
           Discover news → Save research → Record an idea or trade → Review the portfolio
         </h2>
         <div ref={ref} className="relative mt-12">
-          <svg
-            className="pointer-events-none absolute left-6 top-0 hidden h-full w-px md:left-0 md:top-8 md:block md:h-px md:w-full"
+          <motion.div
             aria-hidden
-            viewBox="0 0 100 2"
-            preserveAspectRatio="none"
-          >
-            <motion.line
-              x1="0"
-              y1="1"
-              x2="100"
-              y2="1"
-              stroke="rgba(130,92,237,0.7)"
-              strokeWidth="2"
-              vectorEffect="non-scaling-stroke"
-              initial={{ pathLength: reduce ? 1 : 0 }}
-              animate={{ pathLength: inView || reduce ? 1 : 0 }}
-              transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
-            />
-          </svg>
-          <ol className="grid gap-4 md:grid-cols-4">
+            className="absolute bottom-6 left-[22px] top-6 w-px origin-top bg-primary/70 md:bottom-auto md:left-[12%] md:right-[12%] md:top-8 md:h-px md:w-auto md:origin-left"
+            initial={reduce ? false : { scaleY: 0, scaleX: 0 }}
+            animate={
+              reduce
+                ? { scaleX: 1, scaleY: 1 }
+                : inView
+                  ? { scaleX: 1, scaleY: 1 }
+                  : { scaleX: 0, scaleY: 0 }
+            }
+            transition={{ duration: reduce ? 0 : 1.1, ease: EASE }}
+          />
+          <ol className="relative grid gap-4 md:grid-cols-4">
             {STEPS.map((step, index) => (
               <li key={step.title} className="rounded-2xl border border-white/10 bg-panel p-5">
                 <p className="text-xs tracking-[0.16em] text-[#a78bfa]">0{index + 1}</p>
