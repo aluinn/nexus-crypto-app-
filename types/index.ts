@@ -100,15 +100,6 @@ export type SavedState = {
   collections: Collection[];
 };
 
-export type DemoNotification = {
-  id: string;
-  title: string;
-  body: string;
-  kind: "news" | "portfolio" | "research";
-  createdAt: string;
-  demo: true;
-};
-
 export const EVENT_CATEGORIES = [
   "Network Upgrade",
   "Token Unlock",
@@ -129,5 +120,23 @@ export type CalendarEvent = {
   date: string;
   /** Related asset symbols. Empty for broad macro events. */
   assets: string[];
-  demo: true;
+  /** Link to the original proposal or announcement. Absent for your own entries. */
+  url?: string;
+  /** Where this was pulled from live. Absent for your own entries. */
+  source?: "Snapshot" | "Binance";
+};
+
+export const EVENT_SOURCES = ["Snapshot", "Binance"] as const;
+
+export type EventSourceStatus = {
+  source: (typeof EVENT_SOURCES)[number];
+  ok: boolean;
+  error?: string;
+};
+
+export type EventsResponse = {
+  events: CalendarEvent[];
+  cached: boolean;
+  fetchedAt: string;
+  sources: EventSourceStatus[];
 };

@@ -52,7 +52,7 @@ const CHAPTERS = [
     id: "events",
     kicker: "Events",
     heading: "See the catalysts before they land.",
-    body: "Track network upgrades, token unlocks, governance votes, regulatory decisions, exchange listings, project launches and economic announcements in one filterable calendar.",
+    body: "Live governance votes from Snapshot and exchange activity from Binance, alongside your own network upgrades, unlocks, and other catalysts, in one filterable calendar.",
     src: "/assets/nexus/nexus-events.png",
     width: 2110,
     height: 1192,
@@ -116,7 +116,7 @@ export function ProductStory() {
         </div>
         <div className="hidden lg:grid lg:grid-cols-2 lg:gap-16">
           <div className="relative">
-            <div className="sticky top-24">
+            <div className="sticky top-1/2 -translate-y-1/2">
               <div className="relative">
                 {CHAPTERS.map((chapter, index) => (
                   <motion.div
@@ -136,27 +136,37 @@ export function ProductStory() {
               </div>
             </div>
           </div>
-          <div>
+          <div className="relative">
+            <div className="sticky top-1/2 -translate-y-1/2">
+              <div className="relative">
+                {CHAPTERS.map((chapter, index) => (
+                  <motion.div
+                    key={chapter.id}
+                    className={index === active ? "relative" : "pointer-events-none absolute inset-0"}
+                    animate={{
+                      opacity: active === index ? 1 : 0,
+                      y: active === index ? 0 : 14,
+                    }}
+                    transition={{ duration: reduce ? 0 : 0.45, ease: EASE }}
+                    aria-hidden={active !== index}
+                  >
+                    <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
+                    <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
+                    <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
             {CHAPTERS.map((chapter, index) => (
-              <article
+              <div
                 key={chapter.id}
                 data-index={index}
                 ref={(node) => {
                   itemRefs.current[index] = node;
                 }}
-                className="flex min-h-[80vh] flex-col justify-center py-16"
-              >
-                <motion.div
-                  initial={reduce ? false : { opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-35% 0px -35% 0px" }}
-                  transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
-                >
-                  <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
-                  <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
-                  <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
-                </motion.div>
-              </article>
+                className="h-[80vh]"
+                aria-hidden
+              />
             ))}
           </div>
         </div>

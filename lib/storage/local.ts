@@ -31,7 +31,7 @@ export const STORAGE_KEYS = {
   holdings: "nexus.holdings.v1",
   journal: "nexus.journal.v1",
   saved: "nexus.saved.v1",
-  dismissedNotifications: "nexus.notifications.dismissed.v1",
   interests: "nexus.interests.v1",
   currency: "nexus.currency.v1",
+  events: "nexus.events.v1",
 } as const;

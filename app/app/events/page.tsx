@@ -3,7 +3,7 @@ import { EventsView } from "@/components/events/events-view";
 
 export const metadata: Metadata = {
   title: "Events",
-  description: "Illustrative crypto events: network upgrades, token unlocks, governance votes, regulatory decisions, exchange listings, project launches, and economic announcements.",
+  description: "Live governance votes from Snapshot and exchange activity from Binance, plus your own network upgrades, token unlocks, regulatory decisions, and other catalysts.",
 };
 
 export default function EventsPage() {

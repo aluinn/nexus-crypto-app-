@@ -78,11 +78,15 @@ export function formatEventDate(iso: string) {
   }).format(date);
 }
 
-/** "In 3 days" / "Today" / "2 days ago", relative to `now`. */
+/** "In 3 days" / "Today" / "2 days ago", relative to `now`. Compares whole
+ * calendar days (UTC), not exact timestamps, since events only carry a date. */
 export function formatDayCountdown(iso: string, now: number) {
-  const target = new Date(iso).getTime();
-  if (Number.isNaN(target)) return "";
-  const diffDays = Math.round((target - now) / 86_400_000);
+  const target = new Date(iso);
+  if (Number.isNaN(target.getTime())) return "";
+  const targetStart = Date.UTC(target.getUTCFullYear(), target.getUTCMonth(), target.getUTCDate());
+  const nowDate = new Date(now);
+  const nowStart = Date.UTC(nowDate.getUTCFullYear(), nowDate.getUTCMonth(), nowDate.getUTCDate());
+  const diffDays = Math.round((targetStart - nowStart) / 86_400_000);
   if (diffDays === 0) return "Today";
   if (diffDays === 1) return "Tomorrow";
   if (diffDays === -1) return "Yesterday";

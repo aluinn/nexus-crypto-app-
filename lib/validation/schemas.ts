@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CURRENCIES, NEWS_SOURCES, TIME_RANGES } from "@/types";
+import { CURRENCIES, EVENT_CATEGORIES, EVENT_SOURCES, NEWS_SOURCES, TIME_RANGES } from "@/types";
 
 const httpUrl = z.string().refine((value) => {
   try {
@@ -80,9 +80,35 @@ export const savedStateSchema = z.object({
   collections: z.array(collectionSchema).max(50),
 });
 
-export const dismissedNotificationsSchema = z.array(z.string()).max(100);
-
 export const interestsSchema = z.array(z.string().min(2).max(10)).max(5);
+
+export const eventCategorySchema = z.enum(EVENT_CATEGORIES);
+
+export const calendarEventSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(120),
+  description: z.string().max(600),
+  category: eventCategorySchema,
+  date: isoTime,
+  assets: z.array(z.string().min(1).max(10)).max(8),
+  url: httpUrl.optional(),
+  source: z.enum(EVENT_SOURCES).optional(),
+});
+
+export const eventsSchema = z.array(calendarEventSchema).max(200);
+
+export const eventsResponseSchema = z.object({
+  events: z.array(calendarEventSchema),
+  cached: z.boolean(),
+  fetchedAt: isoTime,
+  sources: z.array(
+    z.object({
+      source: z.enum(EVENT_SOURCES),
+      ok: z.boolean(),
+      error: z.string().optional(),
+    }),
+  ),
+});
 
 export const timeRangeSchema = z.enum(TIME_RANGES);
 

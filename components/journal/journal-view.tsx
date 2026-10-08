@@ -5,7 +5,6 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EntryDialog } from "@/components/journal/entry-dialog";
 import { TAG_STYLES } from "@/data/assets";
-import { SEED_JOURNAL } from "@/data/seed-journal";
 import { cn } from "@/lib/cn";
 import { formatJournalDate, formatQuantity, formatUsd } from "@/lib/format";
 import { listStagger } from "@/lib/motion";
@@ -14,6 +13,8 @@ import { useStoredState } from "@/lib/storage/use-stored";
 import { journalSchema } from "@/lib/validation/schemas";
 import type { JournalEntry, JournalType } from "@/types";
 import { ConfirmDialog } from "@/components/ui/dialog";
+
+const EMPTY_JOURNAL: JournalEntry[] = [];
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -39,7 +40,7 @@ function matches(entry: JournalEntry, filter: (typeof FILTERS)[number]["id"]) {
 export function JournalView() {
   const reduce = useReducedMotion();
   const stagger = listStagger(Boolean(reduce));
-  const [entries, setEntries] = useStoredState(STORAGE_KEYS.journal, journalSchema, SEED_JOURNAL);
+  const [entries, setEntries] = useStoredState(STORAGE_KEYS.journal, journalSchema, EMPTY_JOURNAL);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<JournalEntry | null>(null);
