@@ -1,8 +1,10 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/cn";
+import { EASE } from "@/lib/motion";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
@@ -22,6 +24,7 @@ export function Dialog({
   children: React.ReactNode;
   wide?: boolean;
 }) {
+  const reduce = useReducedMotion();
   const panelRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
   const titleId = useId();
@@ -78,45 +81,66 @@ export function Dialog({
     };
   }, [open]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
-      <button type="button" className="absolute inset-0 bg-black/70" aria-label="Close dialog" onClick={onClose} />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        aria-describedby={description ? descriptionId : undefined}
-        className={cn(
-          "relative z-10 max-h-[min(92vh,860px)] w-full overflow-y-auto rounded-t-2xl border border-white/10 bg-[#0c101c] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.5)] sm:rounded-2xl sm:p-6",
-          wide ? "max-w-lg" : "max-w-md",
-        )}
-      >
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <h2 id={titleId} className="text-xl font-semibold tracking-tight text-foreground">
-              {title}
-            </h2>
-            {description ? (
-              <p id={descriptionId} className="mt-1 text-sm text-muted">
-                {description}
-              </p>
-            ) : null}
-          </div>
-          <button
+    <AnimatePresence>
+      {open ? (
+        <motion.div
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: reduce ? 0 : 0.18, ease: EASE }}
+        >
+          <motion.button
             type="button"
+            className="absolute inset-0 bg-black/70"
+            aria-label="Close dialog"
             onClick={onClose}
-            className="grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-white/5 hover:text-foreground"
-            aria-label="Close"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduce ? 0 : 0.2, ease: EASE }}
+          />
+          <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={description ? descriptionId : undefined}
+            className={cn(
+              "relative z-10 max-h-[min(92vh,860px)] w-full overflow-y-auto rounded-t-2xl border border-white/10 bg-[#0c101c] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.5)] sm:rounded-2xl sm:p-6",
+              wide ? "max-w-lg" : "max-w-md",
+            )}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 28, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+            transition={{ duration: reduce ? 0 : 0.3, ease: EASE }}
           >
-            <X className="size-4" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h2 id={titleId} className="text-xl font-semibold tracking-tight text-foreground">
+                  {title}
+                </h2>
+                {description ? (
+                  <p id={descriptionId} className="mt-1 text-sm text-muted">
+                    {description}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="grid size-11 shrink-0 place-items-center rounded-full text-muted hover:bg-white/5 hover:text-foreground"
+                aria-label="Close"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            {children}
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
   );
 }
 

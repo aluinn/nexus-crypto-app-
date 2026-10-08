@@ -1,14 +1,13 @@
-import { DEMO_PRICES_GBP } from "@/data/assets";
+import { DEMO_PRICES_USD } from "@/data/assets";
 import type { MarketDataProvider } from "@/lib/market/types";
 
 export class MockMarketDataProvider implements MarketDataProvider {
-  async getPrices(symbols: string[], currency: string) {
-    const upper = currency.toUpperCase();
+  async getPrices(symbols: string[]) {
     const quotes: Record<string, { price: number; change24h?: number; updatedAt: string }> = {};
     const updatedAt = new Date().toISOString();
     for (const symbol of symbols) {
-      const demo = DEMO_PRICES_GBP[symbol.toUpperCase()];
-      if (!demo || upper !== "GBP") continue;
+      const demo = DEMO_PRICES_USD[symbol.toUpperCase()];
+      if (!demo) continue;
       quotes[symbol.toUpperCase()] = {
         price: demo.price,
         change24h: demo.change24h,

@@ -1,9 +1,13 @@
-export function formatGbp(value: number, digits = 2) {
-  const formatted = new Intl.NumberFormat("en-GB", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
+export function formatCurrency(value: number, currency: string) {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency,
   }).format(value);
-  return `£${formatted}`;
+}
+
+export function formatSignedCurrency(value: number, currency: string) {
+  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+  return `${sign}${formatCurrency(Math.abs(value), currency)}`;
 }
 
 export function formatUsd(value: number) {
@@ -25,11 +29,6 @@ export function formatQuantity(value: number) {
 
 export function formatPercent(value: number) {
   return `${value.toFixed(1)}%`;
-}
-
-export function formatSignedGbp(value: number) {
-  const sign = value > 0 ? "+" : value < 0 ? "−" : "";
-  return `${sign}${formatGbp(Math.abs(value))}`;
 }
 
 export function formatRelativeTime(iso: string, now: number) {
@@ -67,6 +66,28 @@ export function formatClock(iso: string) {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
+}
+
+export function formatEventDate(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+/** "In 3 days" / "Today" / "2 days ago", relative to `now`. */
+export function formatDayCountdown(iso: string, now: number) {
+  const target = new Date(iso).getTime();
+  if (Number.isNaN(target)) return "";
+  const diffDays = Math.round((target - now) / 86_400_000);
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Tomorrow";
+  if (diffDays === -1) return "Yesterday";
+  if (diffDays > 1) return `In ${diffDays} days`;
+  return `${Math.abs(diffDays)} days ago`;
 }
 
 export function todayInputValue() {

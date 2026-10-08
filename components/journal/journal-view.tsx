@@ -190,15 +190,13 @@ export function JournalView() {
         </motion.ul>
       )}
 
-      {open ? (
-        <EntryDialog
-          key={editing?.id ?? "new"}
-          open
-          entry={editing}
-          onClose={() => setOpen(false)}
-          onSave={save}
-        />
-      ) : null}
+      <EntryDialog
+        key={editing?.id ?? "new"}
+        open={open}
+        entry={editing}
+        onClose={() => setOpen(false)}
+        onSave={save}
+      />
       <ConfirmDialog
         open={Boolean(removeId)}
         title="Delete this entry?"

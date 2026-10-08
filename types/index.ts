@@ -34,12 +34,17 @@ export type NewsResponse = {
   sources: NewsSourceStatus[];
 };
 
+export const CURRENCIES = ["GBP", "USD", "EUR", "JPY", "CAD", "AUD"] as const;
+export type Currency = (typeof CURRENCIES)[number];
+
 export type Holding = {
   id: string;
   symbol: string;
   name: string;
   quantity: number;
   purchaseValue?: number;
+  /** Currency `purchaseValue` was recorded in. Absent on legacy entries. */
+  purchaseCurrency?: Currency;
   createdAt: string;
 };
 
@@ -55,7 +60,7 @@ export type AssetQuote = {
 };
 
 export type PriceResponse = {
-  currency: "GBP";
+  currency: Currency;
   range: TimeRange;
   updatedAt: string;
   quotes: Record<string, AssetQuote>;
@@ -101,5 +106,28 @@ export type DemoNotification = {
   body: string;
   kind: "news" | "portfolio" | "research";
   createdAt: string;
+  demo: true;
+};
+
+export const EVENT_CATEGORIES = [
+  "Network Upgrade",
+  "Token Unlock",
+  "Governance Vote",
+  "Regulatory Decision",
+  "Exchange Listing",
+  "Project Launch",
+  "Economic Announcement",
+] as const;
+export type EventCategory = (typeof EVENT_CATEGORIES)[number];
+
+export type CalendarEvent = {
+  id: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  /** ISO datetime. */
+  date: string;
+  /** Related asset symbols. Empty for broad macro events. */
+  assets: string[];
   demo: true;
 };

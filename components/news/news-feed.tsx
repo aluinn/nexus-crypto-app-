@@ -7,9 +7,8 @@ import { ArticleCard } from "@/components/news/article-card";
 import { InterestsPicker } from "@/components/for-you/interests-picker";
 import { FALLBACK_NEWS } from "@/data/fallback-news";
 import { assetBySymbol, TAG_STYLES } from "@/data/assets";
-import { SEED_HOLDINGS } from "@/data/seed-holdings";
 import { cn } from "@/lib/cn";
-import { listStagger } from "@/lib/motion";
+import { EASE, listStagger } from "@/lib/motion";
 import { primaryTag } from "@/lib/news/tags";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
@@ -19,11 +18,12 @@ import {
   newsResponseSchema,
   savedStateSchema,
 } from "@/lib/validation/schemas";
-import type { NewsArticle, SavedArticle, SavedState } from "@/types";
+import type { Holding, NewsArticle, SavedArticle, SavedState } from "@/types";
 
 const DEFAULT_FILTERS = ["BTC", "SOL", "ETH", "NEAR", "ADA"];
 const EMPTY_SAVED: SavedState = { articles: [], collections: [] };
 const EMPTY_INTERESTS: string[] = [];
+const EMPTY_HOLDINGS: Holding[] = [];
 
 function scoreArticle(article: NewsArticle, symbols: string[], now: number) {
   const ageHours = (now - new Date(article.publishedAt).getTime()) / 36e5;
@@ -47,7 +47,7 @@ export function NewsFeed() {
   const [rankedAt, setRankedAt] = useState(0);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saved, setSaved] = useStoredState(STORAGE_KEYS.saved, savedStateSchema, EMPTY_SAVED);
-  const [holdings] = useStoredState(STORAGE_KEYS.holdings, holdingsSchema, SEED_HOLDINGS);
+  const [holdings] = useStoredState(STORAGE_KEYS.holdings, holdingsSchema, EMPTY_HOLDINGS);
   const [interests, setInterests] = useStoredState(
     STORAGE_KEYS.interests,
     interestsSchema,
@@ -201,18 +201,27 @@ export function NewsFeed() {
         )}
       </div>
 
-      {searchOpen ? (
-        <label className="mt-4 block">
-          <span className="sr-only">Search headlines</span>
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search headlines"
-            className="min-h-11 w-full rounded-xl border border-white/10 bg-input px-3 text-sm outline-none"
-            autoFocus
-          />
-        </label>
-      ) : null}
+      <AnimatePresence initial={false}>
+        {searchOpen ? (
+          <motion.label
+            className="mt-4 block"
+            initial={reduce ? false : { opacity: 0, y: -8, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -8, height: 0 }}
+            transition={{ duration: reduce ? 0 : 0.22, ease: EASE }}
+            style={{ overflow: "hidden" }}
+          >
+            <span className="sr-only">Search headlines</span>
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search headlines"
+              className="min-h-11 w-full rounded-xl border border-white/10 bg-input px-3 text-sm outline-none"
+              autoFocus
+            />
+          </motion.label>
+        ) : null}
+      </AnimatePresence>
 
       <div className="scroll-row -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" role="toolbar" aria-label="Filter stories by asset">
         {filters.map((item) => {

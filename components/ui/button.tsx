@@ -1,3 +1,6 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/cn";
 
 const variants = {
@@ -12,9 +15,12 @@ export function Button({
   variant = "primary",
   className,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: keyof typeof variants }) {
+}: React.ComponentProps<typeof motion.button> & { variant?: keyof typeof variants }) {
+  const reduce = useReducedMotion();
   return (
-    <button
+    <motion.button
+      whileTap={reduce || props.disabled ? undefined : { scale: 0.96 }}
+      transition={{ duration: 0.12 }}
       className={cn(
         "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],

@@ -26,7 +26,7 @@ type Draft = {
 
 function draftFrom(entry: JournalEntry | null): Draft {
   if (!entry) {
-    return { type: "buy", asset: "", price: "", amount: "", notes: "", tags: "", date: todayInputValue() };
+    return { type: "buy", asset: "", price: "", amount: "", notes: "", tags: "", date: "" };
   }
   return {
     type: entry.type,
@@ -52,6 +52,19 @@ export function EntryDialog({
 }) {
   const [draft, setDraft] = useState<Draft>(() => draftFrom(entry));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [wasOpen, setWasOpen] = useState(open);
+
+  // Dialog now stays mounted (so it can animate out), so re-derive a fresh
+  // draft whenever it actually opens, rather than relying on remount.
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      const next = draftFrom(entry);
+      setDraft(entry ? next : { ...next, date: todayInputValue() });
+      setErrors({});
+    }
+  }
+
   const trade = draft.type === "buy" || draft.type === "sell";
 
   const set = (patch: Partial<Draft>) => {

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { NEWS_SOURCES, TIME_RANGES } from "@/types";
+import { CURRENCIES, NEWS_SOURCES, TIME_RANGES } from "@/types";
 
 const httpUrl = z.string().refine((value) => {
   try {
@@ -36,12 +36,15 @@ export const newsResponseSchema = z.object({
   ),
 });
 
+export const currencySchema = z.enum(CURRENCIES);
+
 export const holdingSchema = z.object({
   id: z.string().min(1),
   symbol: z.string().min(2).max(10),
   name: z.string().min(1).max(40),
   quantity: z.number().positive().finite(),
   purchaseValue: z.number().nonnegative().finite().optional(),
+  purchaseCurrency: currencySchema.optional(),
   createdAt: isoTime,
 });
 
@@ -92,7 +95,7 @@ export const quoteSchema = z.object({
 });
 
 export const priceResponseSchema = z.object({
-  currency: z.literal("GBP"),
+  currency: currencySchema,
   range: timeRangeSchema,
   updatedAt: isoTime,
   quotes: z.record(z.string(), quoteSchema),

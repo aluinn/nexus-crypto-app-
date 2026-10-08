@@ -33,4 +33,5 @@ export const STORAGE_KEYS = {
   saved: "nexus.saved.v1",
   dismissedNotifications: "nexus.notifications.dismissed.v1",
   interests: "nexus.interests.v1",
+  currency: "nexus.currency.v1",
 } as const;

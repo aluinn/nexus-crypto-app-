@@ -3,7 +3,6 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { NexusMark } from "@/components/ui/logo";
 import { EASE } from "@/lib/motion";
 
 const COVER_MS = 420;
@@ -66,14 +65,15 @@ export function AppTransitionProvider({ children }: { children: React.ReactNode 
             exit={{ opacity: 0 }}
             transition={{ duration: COVER_MS / 1000, ease: EASE }}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.85 }}
+            <motion.p
+              className="text-xs font-medium tracking-[0.3em] text-[#a78bfa] sm:text-sm"
+              initial={{ opacity: 0, scale: 0.92 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.92 }}
+              exit={{ opacity: 0, scale: 0.96 }}
               transition={{ duration: 0.3, ease: EASE }}
             >
-              <NexusMark className="size-14" iconClassName="size-6" />
-            </motion.div>
+              CRYPTO INTELLIGENCE
+            </motion.p>
           </motion.div>
         ) : null}
       </AnimatePresence>

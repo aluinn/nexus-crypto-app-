@@ -1,18 +1,14 @@
-import { ASSET_MAP } from "@/data/assets";
 import { coinbaseMarketData, coinbasePeriodOpen } from "@/lib/market/coinbase";
+import { usdRate } from "@/lib/market/fx";
 import { mockMarketData } from "@/lib/market/mock";
-import type { AssetQuote, TimeRange } from "@/types";
+import type { AssetQuote, Currency, TimeRange } from "@/types";
 
 const PRICE_TTL_MS = 60_000;
 const HISTORY_TTL_MS = 10 * 60_000;
 
-type CachedQuote = {
-  at: number;
-  price: number;
-  change24h?: number;
-  updatedAt: string;
-};
+type CachedQuote = { at: number; price: number; change24h?: number; updatedAt: string };
 
+/** Both caches are USD-denominated; display-currency conversion happens on read. */
 const quoteCache = new Map<string, CachedQuote>();
 const historyCache = new Map<string, { at: number; open?: number }>();
 
@@ -31,13 +27,13 @@ function rangeWindow(range: TimeRange) {
 }
 
 async function demoQuote(symbol: string): Promise<AssetQuote | null> {
-  const demo = await mockMarketData.getPrices([symbol], "GBP");
+  const demo = await mockMarketData.getPrices([symbol]);
   const quote = demo[symbol];
   if (!quote) return null;
   return { ...quote, source: "demo" };
 }
 
-async function quoteFor(symbol: string, refresh: boolean): Promise<AssetQuote | null> {
+async function quoteForUsd(symbol: string, refresh: boolean): Promise<AssetQuote | null> {
   const cached = quoteCache.get(symbol);
   const fresh = cached && Date.now() - cached.at < PRICE_TTL_MS;
   if (cached && fresh && !refresh) {
@@ -49,11 +45,8 @@ async function quoteFor(symbol: string, refresh: boolean): Promise<AssetQuote | 
     };
   }
 
-  const known = ASSET_MAP[symbol];
-  if (known && !known.liveGbp) return await demoQuote(symbol);
-
   try {
-    const live = await coinbaseMarketData.getPrices([symbol], "GBP");
+    const live = await coinbaseMarketData.getPrices([symbol]);
     const quote = live[symbol];
     if (!quote) throw new Error("missing");
     quoteCache.set(symbol, { at: Date.now(), ...quote });
@@ -71,7 +64,7 @@ async function quoteFor(symbol: string, refresh: boolean): Promise<AssetQuote | 
   }
 }
 
-async function periodOpen(symbol: string, range: TimeRange, refresh: boolean, quote: AssetQuote) {
+async function periodOpenUsd(symbol: string, range: TimeRange, refresh: boolean, quote: AssetQuote) {
   if (range === "1D") {
     if (quote.change24h == null) return undefined;
     const factor = 1 + quote.change24h / 100;
@@ -90,7 +83,7 @@ async function periodOpen(symbol: string, range: TimeRange, refresh: boolean, qu
   const window = rangeWindow(range);
   if (!window) return undefined;
   try {
-    const open = await coinbasePeriodOpen(symbol, "GBP", window.start, window.end);
+    const open = await coinbasePeriodOpen(symbol, window.start, window.end);
     historyCache.set(key, { at: Date.now(), open });
     return open;
   } catch {
@@ -99,19 +92,29 @@ async function periodOpen(symbol: string, range: TimeRange, refresh: boolean, qu
   }
 }
 
-export async function getMarketSnapshot(symbols: string[], range: TimeRange, refresh: boolean) {
+export async function getMarketSnapshot(
+  symbols: string[],
+  range: TimeRange,
+  refresh: boolean,
+  currency: Currency,
+) {
   const unique = [...new Set(symbols.map((symbol) => symbol.toUpperCase()))].filter(Boolean);
+  const rate = await usdRate(currency);
   const quotes: Record<string, AssetQuote> = {};
   await Promise.all(
     unique.map(async (symbol) => {
-      const quote = await quoteFor(symbol, refresh);
+      const quote = await quoteForUsd(symbol, refresh);
       if (!quote) return;
-      const open = await periodOpen(symbol, range, refresh, quote);
-      quotes[symbol] = open ? { ...quote, periodOpen: open } : quote;
+      const open = await periodOpenUsd(symbol, range, refresh, quote);
+      quotes[symbol] = {
+        ...quote,
+        price: quote.price * rate,
+        periodOpen: open != null ? open * rate : undefined,
+      };
     }),
   );
   return {
-    currency: "GBP" as const,
+    currency,
     range,
     updatedAt: new Date().toISOString(),
     quotes,

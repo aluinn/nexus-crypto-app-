@@ -3,7 +3,6 @@
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TransitionLink } from "@/components/transition/transition-link";
-import { NexusMark } from "@/components/ui/logo";
 import { cn } from "@/lib/cn";
 
 const LINKS = [
@@ -41,8 +40,7 @@ export function LandingNav() {
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <a href="#product" className="flex items-center gap-2.5 rounded-lg">
-          <NexusMark className="size-8 rounded-lg" />
+        <a href="#product" className="flex items-center rounded-lg">
           <span className="text-sm font-semibold tracking-[0.16em] text-[#c4b5fd]">NEXUS</span>
         </a>
         <nav aria-label="Page" className="hidden items-center gap-7 md:flex">

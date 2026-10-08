@@ -2,32 +2,30 @@ export type AssetInfo = {
   symbol: string;
   name: string;
   color: string;
-  /** Public Coinbase GBP pair was available when this catalog was written. */
-  liveGbp: boolean;
 };
 
 export const ASSETS: AssetInfo[] = [
-  { symbol: "BTC", name: "Bitcoin", color: "#e89838", liveGbp: true },
-  { symbol: "ETH", name: "Ethereum", color: "#6878e0", liveGbp: true },
-  { symbol: "SOL", name: "Solana", color: "#8848f0", liveGbp: true },
-  { symbol: "LINK", name: "Chainlink", color: "#6aa2ff", liveGbp: true },
-  { symbol: "ADA", name: "Cardano", color: "#4c6fff", liveGbp: true },
-  { symbol: "DOT", name: "Polkadot", color: "#e879f9", liveGbp: true },
-  { symbol: "AVAX", name: "Avalanche", color: "#f87171", liveGbp: false },
-  { symbol: "ATOM", name: "Cosmos", color: "#94a3b8", liveGbp: true },
-  { symbol: "XRP", name: "XRP", color: "#7eb6d6", liveGbp: false },
-  { symbol: "BNB", name: "BNB", color: "#f5d76e", liveGbp: false },
-  { symbol: "DOGE", name: "Dogecoin", color: "#d4b45a", liveGbp: true },
-  { symbol: "UNI", name: "Uniswap", color: "#ff6b9a", liveGbp: true },
-  { symbol: "AAVE", name: "Aave", color: "#b794f6", liveGbp: true },
-  { symbol: "ARB", name: "Arbitrum", color: "#7dd3fc", liveGbp: false },
-  { symbol: "OP", name: "Optimism", color: "#fb7185", liveGbp: false },
-  { symbol: "NEAR", name: "NEAR", color: "#5dce9c", liveGbp: false },
-  { symbol: "APT", name: "Aptos", color: "#34d399", liveGbp: false },
-  { symbol: "SUI", name: "Sui", color: "#93c5fd", liveGbp: false },
-  { symbol: "FIL", name: "Filecoin", color: "#67e8f9", liveGbp: true },
-  { symbol: "LTC", name: "Litecoin", color: "#cbd5e1", liveGbp: true },
-  { symbol: "MATIC", name: "Polygon", color: "#a78bfa", liveGbp: false },
+  { symbol: "BTC", name: "Bitcoin", color: "#e89838" },
+  { symbol: "ETH", name: "Ethereum", color: "#6878e0" },
+  { symbol: "SOL", name: "Solana", color: "#8848f0" },
+  { symbol: "LINK", name: "Chainlink", color: "#6aa2ff" },
+  { symbol: "ADA", name: "Cardano", color: "#4c6fff" },
+  { symbol: "DOT", name: "Polkadot", color: "#e879f9" },
+  { symbol: "AVAX", name: "Avalanche", color: "#f87171" },
+  { symbol: "ATOM", name: "Cosmos", color: "#94a3b8" },
+  { symbol: "XRP", name: "XRP", color: "#7eb6d6" },
+  { symbol: "BNB", name: "BNB", color: "#f5d76e" },
+  { symbol: "DOGE", name: "Dogecoin", color: "#d4b45a" },
+  { symbol: "UNI", name: "Uniswap", color: "#ff6b9a" },
+  { symbol: "AAVE", name: "Aave", color: "#b794f6" },
+  { symbol: "ARB", name: "Arbitrum", color: "#7dd3fc" },
+  { symbol: "OP", name: "Optimism", color: "#fb7185" },
+  { symbol: "NEAR", name: "NEAR", color: "#5dce9c" },
+  { symbol: "APT", name: "Aptos", color: "#34d399" },
+  { symbol: "SUI", name: "Sui", color: "#93c5fd" },
+  { symbol: "FIL", name: "Filecoin", color: "#67e8f9" },
+  { symbol: "LTC", name: "Litecoin", color: "#cbd5e1" },
+  { symbol: "MATIC", name: "Polygon", color: "#a78bfa" },
 ];
 
 export const ASSET_MAP = Object.fromEntries(ASSETS.map((asset) => [asset.symbol, asset]));
@@ -37,32 +35,34 @@ export function assetBySymbol(symbol: string) {
 }
 
 /**
- * Illustrative GBP prices used only when Coinbase does not return a quote.
- * Supported assets use a recent public print as the fallback number.
- * Unsupported assets use round placeholders and must be labelled Demo.
+ * Illustrative USD prices used only when Coinbase does not return a quote.
+ * USD is the pricing base for every asset (converted to the display
+ * currency centrally); supported assets use a recent public print as the
+ * fallback number, unsupported ones use round placeholders and are always
+ * labelled Demo.
  */
-export const DEMO_PRICES_GBP: Record<string, { price: number; change24h: number }> = {
-  BTC: { price: 63196.3, change24h: -2.6 },
-  ETH: { price: 1948.26, change24h: -4.1 },
-  SOL: { price: 88.14, change24h: 1.4 },
-  LINK: { price: 10.12, change24h: -1.1 },
-  ADA: { price: 0.192, change24h: -0.8 },
-  DOT: { price: 0.837, change24h: 0.4 },
-  ATOM: { price: 1.27, change24h: -0.6 },
-  DOGE: { price: 0.067, change24h: 0.9 },
-  UNI: { price: 6.04, change24h: 1.1 },
-  AAVE: { price: 130.31, change24h: -0.4 },
-  FIL: { price: 0.796, change24h: 0.2 },
-  LTC: { price: 50.67, change24h: -1.5 },
-  XRP: { price: 1.5, change24h: 0 },
-  NEAR: { price: 3, change24h: 0 },
-  AVAX: { price: 20, change24h: 0 },
-  APT: { price: 5, change24h: 0 },
-  SUI: { price: 2, change24h: 0 },
-  OP: { price: 0.8, change24h: 0 },
-  ARB: { price: 0.4, change24h: 0 },
-  BNB: { price: 400, change24h: 0 },
-  MATIC: { price: 0.3, change24h: 0 },
+export const DEMO_PRICES_USD: Record<string, { price: number; change24h: number }> = {
+  BTC: { price: 83420, change24h: -2.6 },
+  ETH: { price: 2572, change24h: -4.1 },
+  SOL: { price: 116.3, change24h: 1.4 },
+  LINK: { price: 13.36, change24h: -1.1 },
+  ADA: { price: 0.253, change24h: -0.8 },
+  DOT: { price: 1.11, change24h: 0.4 },
+  ATOM: { price: 1.68, change24h: -0.6 },
+  DOGE: { price: 0.088, change24h: 0.9 },
+  UNI: { price: 7.97, change24h: 1.1 },
+  AAVE: { price: 172, change24h: -0.4 },
+  FIL: { price: 1.05, change24h: 0.2 },
+  LTC: { price: 66.9, change24h: -1.5 },
+  XRP: { price: 1.98, change24h: 0 },
+  NEAR: { price: 3.96, change24h: 0 },
+  AVAX: { price: 26.4, change24h: 0 },
+  APT: { price: 6.6, change24h: 0 },
+  SUI: { price: 2.64, change24h: 0 },
+  OP: { price: 1.06, change24h: 0 },
+  ARB: { price: 0.53, change24h: 0 },
+  BNB: { price: 528, change24h: 0 },
+  MATIC: { price: 0.4, change24h: 0 },
 };
 
 export const TAG_STYLES: Record<string, { text: string; bg: string }> = {

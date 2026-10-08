@@ -48,6 +48,16 @@ const CHAPTERS = [
     height: 1188,
     alt: "Nexus saved articles page with search and stories from Cointelegraph and Decrypt.",
   },
+  {
+    id: "events",
+    kicker: "Events",
+    heading: "See the catalysts before they land.",
+    body: "Track network upgrades, token unlocks, governance votes, regulatory decisions, exchange listings, project launches and economic announcements in one filterable calendar.",
+    src: "/assets/nexus/nexus-events.png",
+    width: 2110,
+    height: 1192,
+    alt: "Nexus events calendar with category filters and upcoming entries like a token unlock and a governance vote.",
+  },
 ] as const;
 
 function Shot({ chapter }: { chapter: (typeof CHAPTERS)[number] }) {

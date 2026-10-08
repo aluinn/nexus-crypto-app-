@@ -5,18 +5,20 @@ import { Pencil, Plus, RefreshCw, Settings, Trash2, TrendingDown, TrendingUp } f
 import { useEffect, useMemo, useState } from "react";
 import { AddHoldingDialog } from "@/components/portfolio/add-holding-dialog";
 import { AllocationChart } from "@/components/portfolio/allocation-chart";
+import { CurrencyPicker } from "@/components/portfolio/currency-picker";
 import { assetBySymbol } from "@/data/assets";
-import { SEED_HOLDINGS } from "@/data/seed-holdings";
 import { cn } from "@/lib/cn";
-import { formatClock, formatGbp, formatPercent, formatQuantity, formatSignedGbp } from "@/lib/format";
+import { formatClock, formatCurrency, formatPercent, formatQuantity, formatSignedCurrency } from "@/lib/format";
 import { listStagger } from "@/lib/motion";
 import { allocationPercent, holdingValue, portfolioTotal, valueChange } from "@/lib/portfolio/calc";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
-import { holdingsSchema, priceResponseSchema } from "@/lib/validation/schemas";
-import type { AssetQuote, Holding, TimeRange } from "@/types";
+import { currencySchema, holdingsSchema, priceResponseSchema } from "@/lib/validation/schemas";
+import type { AssetQuote, Currency, Holding, TimeRange } from "@/types";
 import { TIME_RANGES } from "@/types";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
+
+const EMPTY_HOLDINGS: Holding[] = [];
 
 const RANGE_LABEL: Record<TimeRange, string> = {
   "1D": "today",
@@ -38,7 +40,9 @@ function sourceLabel(quotes: AssetQuote[]) {
 export function PortfolioView() {
   const reduce = useReducedMotion();
   const stagger = listStagger(Boolean(reduce));
-  const [holdings, setHoldings, ready] = useStoredState(STORAGE_KEYS.holdings, holdingsSchema, SEED_HOLDINGS);
+  const [holdings, setHoldings, ready] = useStoredState(STORAGE_KEYS.holdings, holdingsSchema, EMPTY_HOLDINGS);
+  const [currency, setCurrency] = useStoredState(STORAGE_KEYS.currency, currencySchema, "GBP" as Currency);
+  const [currencyPickerOpen, setCurrencyPickerOpen] = useState(false);
   const [quotes, setQuotes] = useState<Record<string, AssetQuote>>({});
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [range, setRange] = useState<TimeRange>("1D");
@@ -60,7 +64,7 @@ export function PortfolioView() {
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/prices?symbols=${encodeURIComponent(symbols)}&range=${range}${refresh ? "&refresh=1" : ""}`,
+        `/api/prices?symbols=${encodeURIComponent(symbols)}&range=${range}&currency=${currency}${refresh ? "&refresh=1" : ""}`,
       );
       const parsed = priceResponseSchema.safeParse(await response.json());
       if (parsed.success) {
@@ -79,7 +83,7 @@ export function PortfolioView() {
     }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbols, range, ready]);
+  }, [symbols, range, currency, ready]);
 
   useEffect(() => {
     if (!ready) return;
@@ -96,7 +100,7 @@ export function PortfolioView() {
       document.removeEventListener("visibilitychange", onVisibility);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbols, range, ready]);
+  }, [symbols, range, currency, ready]);
 
   const rows = holdings.map((holding) => {
     const quote = quotes[holding.symbol];
@@ -122,7 +126,14 @@ export function PortfolioView() {
     .filter((slice) => slice.value > 0)
     .sort((a, b) => b.value - a.value);
 
-  const saveHolding = (input: { symbol: string; name: string; quantity: number; purchaseValue?: number; id?: string }) => {
+  const saveHolding = (input: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    purchaseValue?: number;
+    purchaseCurrency?: Currency;
+    id?: string;
+  }) => {
     setHoldings((current) => {
       if (input.id) {
         return current.map((holding) =>
@@ -131,12 +142,14 @@ export function PortfolioView() {
       }
       const existing = current.find((holding) => holding.symbol === input.symbol);
       if (existing) {
+        const sameCurrency = !existing.purchaseCurrency || existing.purchaseCurrency === input.purchaseCurrency;
         return current.map((holding) =>
           holding.symbol === input.symbol
             ? {
                 ...holding,
                 quantity: holding.quantity + input.quantity,
-                purchaseValue: (holding.purchaseValue ?? 0) + (input.purchaseValue ?? 0),
+                purchaseValue: sameCurrency ? (holding.purchaseValue ?? 0) + (input.purchaseValue ?? 0) : undefined,
+                purchaseCurrency: sameCurrency ? (holding.purchaseCurrency ?? input.purchaseCurrency) : input.purchaseCurrency,
               }
             : holding,
         );
@@ -148,6 +161,7 @@ export function PortfolioView() {
           name: input.name,
           quantity: input.quantity,
           purchaseValue: input.purchaseValue,
+          purchaseCurrency: input.purchaseCurrency,
           createdAt: new Date().toISOString(),
         },
         ...current,
@@ -161,14 +175,24 @@ export function PortfolioView() {
     <div>
       <div className="flex items-start justify-between gap-3">
         <h1 className="text-3xl font-semibold tracking-tight">Portfolio</h1>
-        <button
-          type="button"
-          onClick={() => setSettingsOpen(true)}
-          className="grid size-11 place-items-center rounded-full border border-white/10 text-muted hover:text-foreground"
-          aria-label="Portfolio details"
-        >
-          <Settings className="size-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setCurrencyPickerOpen(true)}
+            className="min-h-11 rounded-full border border-white/10 px-3 text-sm font-medium text-muted hover:text-foreground"
+            aria-label="Change display currency"
+          >
+            {currency}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            className="grid size-11 place-items-center rounded-full border border-white/10 text-muted hover:text-foreground"
+            aria-label="Portfolio details"
+          >
+            <Settings className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div className="relative mt-5 flex flex-wrap gap-2">
@@ -183,16 +207,24 @@ export function PortfolioView() {
         >
           Multiple
         </button>
-        {menuOpen ? (
-          <div className="absolute left-0 top-12 z-10 w-64 rounded-xl border border-white/10 bg-[#121624] p-3 text-sm text-muted shadow-xl">
-            Combined portfolios stay out of this version. Holdings remain in My Portfolio on this device.
-          </div>
-        ) : null}
+        <AnimatePresence>
+          {menuOpen ? (
+            <motion.div
+              className="absolute left-0 top-12 z-10 w-64 rounded-xl border border-white/10 bg-[#121624] p-3 text-sm text-muted shadow-xl"
+              initial={reduce ? false : { opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reduce ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: reduce ? 0 : 0.16, ease: "easeOut" }}
+            >
+              Combined portfolios stay out of this version. Holdings remain in My Portfolio on this device.
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
 
       <section className="mt-4 rounded-2xl border border-[#3c2f72] bg-panel p-5 shadow-[0_0_40px_rgba(130,92,237,0.12)]">
         <div className="flex items-start justify-between gap-3">
-          <p className="text-sm text-muted">Total Value ({label})</p>
+          <p className="text-sm text-muted">{rows.length === 0 ? "Total Value" : `Total Value (${label})`}</p>
           <button
             type="button"
             onClick={() => void loadPrices(true)}
@@ -202,30 +234,38 @@ export function PortfolioView() {
             <RefreshCw className={cn("size-4", loading && "motion-safe:animate-spin")} />
           </button>
         </div>
-        <p className="mt-2 text-4xl font-semibold tracking-tight">{formatGbp(total)} GBP</p>
-        <p className={cn("mt-2 flex items-center gap-1 text-sm", (changeTotal ?? 0) >= 0 ? "text-positive" : "text-negative")}>
-          {changeTotal == null ? (
-            <span className="text-muted">Change unavailable for this range</span>
-          ) : (
-            <>
-              {changeTotal >= 0 ? <TrendingUp className="size-4" aria-hidden /> : <TrendingDown className="size-4" aria-hidden />}
-              <span>
-                {formatSignedGbp(changeTotal)} {RANGE_LABEL[range]}
-                <span className="sr-only">{changeTotal >= 0 ? ", up" : ", down"}</span>
-              </span>
-            </>
-          )}
-        </p>
-        <p className="mt-3 text-xs text-muted">
-          {label === "Live"
-            ? "Live Coinbase GBP prices."
-            : label === "Cached"
-              ? "Showing the last Coinbase prices received."
-              : label === "Demo"
-                ? "Demo prices. These are not live market values."
-                : "Some prices are live and some are demo or cached."}
-          {updatedAt ? ` Updated ${formatClock(updatedAt)}.` : ""}
-        </p>
+        <p className="mt-2 text-4xl font-semibold tracking-tight">{formatCurrency(total, currency)}</p>
+        {rows.length === 0 ? (
+          <p className="mt-3 text-xs text-muted">Add a holding to see its live value and allocation.</p>
+        ) : (
+          <>
+            <p className={cn("mt-2 flex items-center gap-1 text-sm", (changeTotal ?? 0) >= 0 ? "text-positive" : "text-negative")}>
+              {changeTotal == null ? (
+                <span className="text-muted">Change unavailable for this range</span>
+              ) : (
+                <>
+                  {changeTotal >= 0 ? <TrendingUp className="size-4" aria-hidden /> : <TrendingDown className="size-4" aria-hidden />}
+                  <span>
+                    {formatSignedCurrency(changeTotal, currency)} {RANGE_LABEL[range]}
+                    <span className="sr-only">{changeTotal >= 0 ? ", up" : ", down"}</span>
+                  </span>
+                </>
+              )}
+            </p>
+            <p className="mt-3 text-xs text-muted">
+              {label === "Live"
+                ? currency === "USD"
+                  ? "Live Coinbase USD prices."
+                  : `Live Coinbase USD prices, converted to ${currency}.`
+                : label === "Cached"
+                  ? "Showing the last prices received."
+                  : label === "Demo"
+                    ? "Demo prices. These are not live market values."
+                    : "Some prices are live and some are demo or cached."}
+              {updatedAt ? ` Updated ${formatClock(updatedAt)}.` : ""}
+            </p>
+          </>
+        )}
       </section>
 
       <div className="scroll-row -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0" role="radiogroup" aria-label="Performance range">
@@ -307,9 +347,9 @@ export function PortfolioView() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium tabular-nums">{formatGbp(row.value)}</p>
+                        <p className="font-medium tabular-nums">{formatCurrency(row.value, currency)}</p>
                         <p className={cn("text-sm tabular-nums", (row.change ?? 0) >= 0 ? "text-positive" : "text-negative")}>
-                          {row.change == null ? "—" : formatSignedGbp(row.change)}
+                          {row.change == null ? "—" : formatSignedCurrency(row.change, currency)}
                         </p>
                       </div>
                     </div>
@@ -355,8 +395,15 @@ export function PortfolioView() {
         open={editorOpen}
         editing={editing}
         quotes={quotes}
+        currency={currency}
         onClose={() => setEditorOpen(false)}
         onSave={saveHolding}
+      />
+      <CurrencyPicker
+        open={currencyPickerOpen}
+        onClose={() => setCurrencyPickerOpen(false)}
+        selected={currency}
+        onSelect={setCurrency}
       />
       <ConfirmDialog
         open={Boolean(removing)}
@@ -371,7 +418,10 @@ export function PortfolioView() {
       />
       <Dialog open={settingsOpen} onClose={() => setSettingsOpen(false)} title="Portfolio details">
         <div className="space-y-3 text-sm leading-6 text-muted">
-          <p>Currency is GBP. Live prices come from Coinbase public market data when a GBP pair exists.</p>
+          <p>
+            Live prices come from Coinbase public USD market data, converted to your chosen display currency
+            (currently {currency}) at the latest exchange rate. Change the currency from the button beside Settings.
+          </p>
           <p>Live means the latest figure came from that feed. Cached means the last successful figure is being reused. Demo means a fallback number, never a live quote.</p>
           <p>Prices refresh about once a minute while this page is visible, and pause when the tab is hidden.</p>
           <p>Nexus does not connect an exchange account and cannot place trades.</p>

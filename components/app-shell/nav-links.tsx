@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bookmark, BookOpen, Newspaper, PieChart } from "lucide-react";
+import { Bell, Bookmark, BookOpen, CalendarDays, Newspaper, PieChart } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +13,7 @@ export const NAV_ITEMS = [
   { href: "/app/journal", label: "Journal", icon: BookOpen },
   { href: "/app/saved", label: "Saved", icon: Bookmark },
   { href: "/app/notifications", label: "Notifications", icon: Bell },
+  { href: "/app/events", label: "Events", icon: CalendarDays },
 ] as const;
 
 export function NavLinks({

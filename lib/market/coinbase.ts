@@ -34,11 +34,10 @@ async function readJson(url: string) {
 }
 
 export class CoinbaseMarketDataProvider implements MarketDataProvider {
-  async getPrices(symbols: string[], currency: string) {
-    const pair = currency.toUpperCase();
+  async getPrices(symbols: string[]) {
     const entries = await Promise.all(
       symbols.map(async (symbol) => {
-        const product = `${symbol.toUpperCase()}-${pair}`;
+        const product = `${symbol.toUpperCase()}-USD`;
         try {
           const [tickerRaw, statsRaw] = await Promise.all([
             readJson(`${BASE}/products/${product}/ticker`),
@@ -71,8 +70,8 @@ export class CoinbaseMarketDataProvider implements MarketDataProvider {
   }
 }
 
-export async function coinbasePeriodOpen(symbol: string, currency: string, startSec: number, endSec: number) {
-  const product = `${symbol.toUpperCase()}-${currency.toUpperCase()}`;
+export async function coinbasePeriodOpen(symbol: string, startSec: number, endSec: number) {
+  const product = `${symbol.toUpperCase()}-USD`;
   const url = `${BASE}/products/${product}/candles?granularity=86400&start=${startSec}&end=${endSec}`;
   const raw = await readJson(url);
   const candles = z.array(candleSchema).parse(raw);

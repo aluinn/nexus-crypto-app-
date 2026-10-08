@@ -1,35 +1,82 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ASSETS, DEMO_PRICES_GBP } from "@/data/assets";
+import { useEffect, useMemo, useState } from "react";
+import { ASSETS } from "@/data/assets";
+import { CURRENCY_INFO } from "@/data/currencies";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { formatGbp, formatQuantity } from "@/lib/format";
+import { formatCurrency, formatQuantity } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import type { AssetQuote, Holding } from "@/types";
+import { priceResponseSchema } from "@/lib/validation/schemas";
+import type { AssetQuote, Currency, Holding } from "@/types";
 
 export function AddHoldingDialog({
   open,
   onClose,
   quotes,
+  currency,
   editing,
   onSave,
 }: {
   open: boolean;
   onClose: () => void;
   quotes: Record<string, AssetQuote>;
+  currency: Currency;
   editing: Holding | null;
-  onSave: (holding: { symbol: string; name: string; quantity: number; purchaseValue?: number; id?: string }) => void;
+  onSave: (holding: {
+    symbol: string;
+    name: string;
+    quantity: number;
+    purchaseValue?: number;
+    purchaseCurrency?: Currency;
+    id?: string;
+  }) => void;
 }) {
   const [symbol, setSymbol] = useState(editing?.symbol ?? "BTC");
   const [paid, setPaid] = useState("");
   const [quantity, setQuantity] = useState(editing ? String(editing.quantity) : "");
   const [error, setError] = useState("");
+  const [fetchedQuote, setFetchedQuote] = useState<AssetQuote | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [trackedSymbol, setTrackedSymbol] = useState(symbol);
 
   const asset = ASSETS.find((item) => item.symbol === symbol) ?? ASSETS[0];
-  const quote = quotes[asset.symbol];
-  const price = quote?.price ?? DEMO_PRICES_GBP[asset.symbol]?.price;
+
+  if (trackedSymbol !== asset.symbol) {
+    setTrackedSymbol(asset.symbol);
+    setFetchedQuote(null);
+  }
+  const quote = quotes[asset.symbol] ?? fetchedQuote ?? undefined;
+  const price = quote?.price;
   const source = quote?.source;
+  const currencySymbol = CURRENCY_INFO[currency].symbol;
+
+  // The asset grid lets you pick any catalog symbol, including ones you
+  // don't hold yet, so there may be no quote fetched for it. Fetch one.
+  useEffect(() => {
+    if (editing || quotes[asset.symbol] || !open) return;
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setQuoteLoading(true);
+      fetch(`/api/prices?symbols=${asset.symbol}&currency=${currency}`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (cancelled) return;
+          const parsed = priceResponseSchema.safeParse(data);
+          setFetchedQuote(parsed.success ? (parsed.data.quotes[asset.symbol] ?? null) : null);
+        })
+        .catch(() => {
+          if (!cancelled) setFetchedQuote(null);
+        })
+        .finally(() => {
+          if (!cancelled) setQuoteLoading(false);
+        });
+    }, 0);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [asset.symbol, currency, editing, open, quotes]);
 
   const previewQuantity = useMemo(() => {
     const amount = Number(paid);
@@ -60,7 +107,7 @@ export function AddHoldingDialog({
       return;
     }
     if (!Number.isFinite(amount) || amount <= 0) {
-      setError("Enter the amount you paid in GBP.");
+      setError(`Enter the amount you paid in ${currency}.`);
       return;
     }
     onSave({
@@ -68,6 +115,7 @@ export function AddHoldingDialog({
       name: asset.name,
       quantity: amount / price,
       purchaseValue: amount,
+      purchaseCurrency: currency,
     });
     onClose();
   };
@@ -77,7 +125,7 @@ export function AddHoldingDialog({
       open={open}
       onClose={onClose}
       title={editing ? "Edit Holding" : "Add Holding"}
-      description={editing ? "Update the quantity stored on this device." : "Choose an asset and the amount paid in GBP."}
+      description={editing ? "Update the quantity stored on this device." : `Choose an asset and the amount paid in ${currency}.`}
       wide
     >
       {editing ? (
@@ -126,9 +174,9 @@ export function AddHoldingDialog({
             })}
           </div>
           <label className="mt-5 block text-sm">
-            <span className="text-muted">Amount Paid (GBP)</span>
+            <span className="text-muted">Amount Paid ({currency})</span>
             <span className="mt-2 flex min-h-12 items-center gap-2 rounded-xl border border-[#6d4fd4] bg-input px-3">
-              <span aria-hidden>£</span>
+              <span aria-hidden>{currencySymbol}</span>
               <input
                 value={paid}
                 onChange={(event) => {
@@ -137,7 +185,7 @@ export function AddHoldingDialog({
                 }}
                 inputMode="decimal"
                 className="min-h-11 w-full bg-transparent outline-none"
-                aria-label="Amount paid in GBP"
+                aria-label={`Amount paid in ${currency}`}
               />
             </span>
           </label>
@@ -145,19 +193,21 @@ export function AddHoldingDialog({
             {price ? (
               <>
                 <p className="text-muted">
-                  1 {asset.symbol} = {formatGbp(price)} GBP
+                  1 {asset.symbol} = {formatCurrency(price, currency)}
                 </p>
                 <p className="mt-1 text-base text-foreground">
                   {previewQuantity ? `≈ ${formatQuantity(previewQuantity)} ${asset.symbol}` : "Enter an amount to estimate the quantity."}
                 </p>
                 <p className="mt-2 text-xs text-muted">
                   {source === "live"
-                    ? "Live Coinbase price."
+                    ? "Live Coinbase price, converted to your display currency."
                     : source === "cached"
                       ? "Cached Coinbase price from the last successful request."
-                      : "Demo price. This is not a live GBP quote."}
+                      : `Demo price. This is not a live ${currency} quote.`}
                 </p>
               </>
+            ) : quoteLoading ? (
+              <p className="text-muted">Fetching price…</p>
             ) : (
               <p>No price is available for {asset.symbol}.</p>
             )}
