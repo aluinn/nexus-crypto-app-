@@ -1,9 +1,11 @@
 "use client";
 
 import { Bell, Bookmark, BookOpen, Newspaper, PieChart } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
+import { EASE } from "@/lib/motion";
 
 export const NAV_ITEMS = [
   { href: "/app/for-you", label: "For You", icon: Newspaper },
@@ -13,7 +15,13 @@ export const NAV_ITEMS = [
   { href: "/app/notifications", label: "Notifications", icon: Bell },
 ] as const;
 
-export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+export function NavLinks({
+  onNavigate,
+  scope = "desktop",
+}: {
+  onNavigate?: () => void;
+  scope?: "desktop" | "mobile";
+}) {
   const pathname = usePathname();
   return (
     <nav aria-label="Application" className="flex flex-col gap-1">
@@ -27,12 +35,20 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition-colors",
+              "relative flex min-h-11 items-center gap-3 rounded-xl border px-3 text-sm transition-colors",
               active
-                ? "border-[#3c2f72] bg-[#1a1732] text-foreground shadow-[0_0_24px_rgba(130,92,237,0.16)]"
+                ? "border-[#3c2f72] text-foreground"
                 : "border-transparent text-[#9aa6bd] hover:bg-white/[0.04] hover:text-foreground",
             )}
           >
+            {active ? (
+              <motion.span
+                layoutId={`nav-active-bg-${scope}`}
+                aria-hidden
+                className="absolute inset-0 -z-10 rounded-xl bg-[#1a1732] shadow-[0_0_24px_rgba(130,92,237,0.16)]"
+                transition={{ duration: 0.3, ease: EASE }}
+              />
+            ) : null}
             <Icon className="size-4 shrink-0" aria-hidden />
             <span className="flex-1">{item.label}</span>
             {active ? <span className="size-1.5 rounded-full bg-primary" aria-hidden /> : null}

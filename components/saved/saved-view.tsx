@@ -1,10 +1,12 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMemo, useState } from "react";
 import { ArticleCard } from "@/components/news/article-card";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog, Dialog } from "@/components/ui/dialog";
 import { cn } from "@/lib/cn";
+import { listStagger } from "@/lib/motion";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
 import { savedStateSchema } from "@/lib/validation/schemas";
@@ -13,6 +15,8 @@ import type { Collection, SavedState } from "@/types";
 const EMPTY: SavedState = { articles: [], collections: [] };
 
 export function SavedView() {
+  const reduce = useReducedMotion();
+  const stagger = listStagger(Boolean(reduce));
   const [state, setState] = useStoredState(STORAGE_KEYS.saved, savedStateSchema, EMPTY);
   const [tab, setTab] = useState<"articles" | "collections">("articles");
   const [query, setQuery] = useState("");
@@ -155,16 +159,15 @@ export function SavedView() {
           ) : articles.length === 0 ? (
             <p className="mt-4 text-sm text-muted">No saved articles match that search.</p>
           ) : (
-            <div className="mt-4 space-y-3">
-              {articles.map((article) => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  saved
-                  onToggleSave={() => unsave(article.id)}
-                />
-              ))}
-            </div>
+            <motion.div className="mt-4 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+              <AnimatePresence mode="popLayout" initial={false}>
+                {articles.map((article) => (
+                  <motion.div key={article.id} layout variants={stagger.item} initial="hidden" animate="show" exit="exit">
+                    <ArticleCard article={article} saved onToggleSave={() => unsave(article.id)} />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
       ) : (
@@ -193,9 +196,18 @@ export function SavedView() {
                   <p className="mt-2 text-sm text-muted">Group saved stories by asset, thesis, or market event.</p>
                 </div>
               ) : (
-                <ul className="mt-4 space-y-3">
+                <motion.ul className="mt-4 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+                  <AnimatePresence mode="popLayout" initial={false}>
                   {state.collections.map((collection) => (
-                    <li key={collection.id} className="rounded-2xl border border-white/10 bg-panel p-4">
+                    <motion.li
+                      key={collection.id}
+                      layout
+                      variants={stagger.item}
+                      initial="hidden"
+                      animate="show"
+                      exit="exit"
+                      className="rounded-2xl border border-white/10 bg-panel p-4"
+                    >
                       <button type="button" className="w-full text-left" onClick={() => setActiveId(collection.id)}>
                         <p className="font-medium">{collection.name}</p>
                         <p className="mt-1 text-sm text-muted">
@@ -223,9 +235,10 @@ export function SavedView() {
                           {collection.articleIds.length > 0 ? "Empty it before deleting" : "Delete"}
                         </button>
                       </div>
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                  </AnimatePresence>
+                </motion.ul>
               )}
             </>
           )}
@@ -342,6 +355,8 @@ function CollectionDetail({
   onAdd: () => void;
   onRemove: (id: string) => void;
 }) {
+  const reduce = useReducedMotion();
+  const stagger = listStagger(Boolean(reduce));
   const members = collection.articleIds
     .map((id) => articles.find((article) => article.id === id))
     .filter((article): article is SavedState["articles"][number] => Boolean(article));
@@ -365,9 +380,18 @@ function CollectionDetail({
       {members.length === 0 ? (
         <p className="mt-4 text-sm text-muted">This collection is empty. Add saved articles, or delete it from the list.</p>
       ) : (
-        <ul className="mt-4 space-y-3">
+        <motion.ul className="mt-4 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+          <AnimatePresence mode="popLayout" initial={false}>
           {members.map((article) => (
-            <li key={article.id} className="rounded-2xl border border-white/10 bg-panel p-4">
+            <motion.li
+              key={article.id}
+              layout
+              variants={stagger.item}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              className="rounded-2xl border border-white/10 bg-panel p-4"
+            >
               <p className="text-sm text-muted">{article.source}</p>
               <p className="mt-2 font-medium">{article.title}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -387,9 +411,10 @@ function CollectionDetail({
                   Remove from collection
                 </button>
               </div>
-            </li>
+            </motion.li>
           ))}
-        </ul>
+          </AnimatePresence>
+        </motion.ul>
       )}
     </div>
   );

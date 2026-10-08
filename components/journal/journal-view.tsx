@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { EntryDialog } from "@/components/journal/entry-dialog";
@@ -7,6 +8,7 @@ import { TAG_STYLES } from "@/data/assets";
 import { SEED_JOURNAL } from "@/data/seed-journal";
 import { cn } from "@/lib/cn";
 import { formatJournalDate, formatQuantity, formatUsd } from "@/lib/format";
+import { listStagger } from "@/lib/motion";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
 import { journalSchema } from "@/lib/validation/schemas";
@@ -35,6 +37,8 @@ function matches(entry: JournalEntry, filter: (typeof FILTERS)[number]["id"]) {
 }
 
 export function JournalView() {
+  const reduce = useReducedMotion();
+  const stagger = listStagger(Boolean(reduce));
   const [entries, setEntries] = useStoredState(STORAGE_KEYS.journal, journalSchema, SEED_JOURNAL);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const [open, setOpen] = useState(false);
@@ -107,11 +111,20 @@ export function JournalView() {
           <p className="mt-2 text-sm text-muted">Add a buy, sell, note, or idea to start the journal.</p>
         </div>
       ) : (
-        <ul className="mt-4 space-y-3">
+        <motion.ul className="mt-4 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+          <AnimatePresence mode="popLayout" initial={false}>
           {visible.map((entry) => {
             const assetStyle = entry.asset ? TAG_STYLES[entry.asset] : undefined;
             return (
-              <li key={entry.id} className="rounded-2xl border border-white/10 bg-panel p-4">
+              <motion.li
+                key={entry.id}
+                layout
+                variants={stagger.item}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="rounded-2xl border border-white/10 bg-panel p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <time dateTime={entry.date} className="text-sm text-muted">
                     {formatJournalDate(entry.date)}
@@ -170,10 +183,11 @@ export function JournalView() {
                     </button>
                   </div>
                 </div>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+          </AnimatePresence>
+        </motion.ul>
       )}
 
       {open ? (

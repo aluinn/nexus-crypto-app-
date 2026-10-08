@@ -1,13 +1,18 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NavLinks } from "@/components/app-shell/nav-links";
 import { NexusWordmark } from "@/components/ui/logo";
+import { EASE } from "@/lib/motion";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     if (!open) return;
@@ -66,14 +71,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="sr-only">Close navigation</span>
               </button>
             </div>
-            <NavLinks onNavigate={() => setOpen(false)} />
+            <NavLinks scope="mobile" onNavigate={() => setOpen(false)} />
           </div>
         </div>
       ) : null}
 
       <div className="lg:pl-[240px]">
         <div className="mx-auto w-full max-w-3xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          {children}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              initial={reduce ? false : { opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduce ? undefined : { opacity: 0, y: -6 }}
+              transition={{ duration: reduce ? 0 : 0.28, ease: EASE }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
           <p className="mt-10 text-xs leading-5 text-muted">
             Nexus organises market information and personal notes. It is not financial advice and it does not place trades.
           </p>

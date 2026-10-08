@@ -1,8 +1,8 @@
 "use client";
 
 import { Menu, X } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { TransitionLink } from "@/components/transition/transition-link";
 import { NexusMark } from "@/components/ui/logo";
 import { cn } from "@/lib/cn";
 
@@ -53,12 +53,12 @@ export function LandingNav() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Link
+          <TransitionLink
             href="/app/for-you"
             className="inline-flex min-h-11 items-center rounded-full bg-primary px-4 text-sm font-medium text-white hover:bg-primary-bright"
           >
             Open Nexus
-          </Link>
+          </TransitionLink>
           <button
             type="button"
             className="grid size-11 place-items-center rounded-xl border border-white/10 md:hidden"

@@ -36,6 +36,7 @@ html {
   color-scheme: dark;
   background: var(--background);
   overflow-x: clip;
+  scroll-behavior: smooth;
 }
 
 html:has(.nexus-intro) {

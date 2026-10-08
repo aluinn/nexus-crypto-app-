@@ -14,6 +14,9 @@ export const FEEDS: FeedSource[] = [
   { source: "Cointelegraph", url: "https://cointelegraph.com/rss" },
   { source: "Decrypt", url: "https://decrypt.co/feed" },
   { source: "CryptoSlate", url: "https://cryptoslate.com/feed/" },
+  { source: "The Block", url: "https://www.theblock.co/rss.xml" },
+  { source: "Bitcoin Magazine", url: "https://bitcoinmagazine.com/.rss/full/" },
+  { source: "The Defiant", url: "https://thedefiant.io/api/feed" },
 ];
 
 export const FEED_TIMEOUT_MS = 8000;

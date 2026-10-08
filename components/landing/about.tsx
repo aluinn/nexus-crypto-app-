@@ -1,7 +1,12 @@
+import { Reveal } from "@/components/landing/reveal";
+
 export function About() {
   return (
     <section id="about" className="px-4 py-16 sm:px-6" aria-labelledby="about-heading">
-      <div className="mx-auto grid max-w-6xl gap-8 rounded-3xl border border-white/10 bg-panel p-6 sm:p-10 lg:grid-cols-2">
+      <Reveal
+        y={24}
+        className="mx-auto grid max-w-6xl gap-8 rounded-3xl border border-white/10 bg-panel p-6 sm:p-10 lg:grid-cols-2"
+      >
         <div>
           <p className="text-xs font-medium tracking-[0.22em] text-muted">ABOUT</p>
           <h2 id="about-heading" className="mt-3 text-3xl font-semibold tracking-tight">
@@ -19,7 +24,7 @@ export function About() {
             Information in Nexus is for organisation and reference. It is not financial advice, and Nexus does not connect to an exchange account or place trades.
           </p>
         </div>
-      </div>
+      </Reveal>
     </section>
   );
 }

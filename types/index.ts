@@ -3,6 +3,9 @@ export const NEWS_SOURCES = [
   "Cointelegraph",
   "Decrypt",
   "CryptoSlate",
+  "The Block",
+  "Bitcoin Magazine",
+  "The Defiant",
 ] as const;
 
 export type NewsSource = (typeof NEWS_SOURCES)[number];

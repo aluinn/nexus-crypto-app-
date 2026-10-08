@@ -1,5 +1,6 @@
 "use client";
 
+import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import { About } from "@/components/landing/about";
 import { FinalCta } from "@/components/landing/final-cta";
@@ -9,12 +10,20 @@ import { LandingNav } from "@/components/landing/landing-nav";
 import { Problem } from "@/components/landing/problem";
 import { ProductStory } from "@/components/landing/product-story";
 import { Workflow } from "@/components/landing/workflow";
-import { INTRO_MS } from "@/lib/motion";
+import { EASE, INTRO_MS } from "@/lib/motion";
+
+/** Cumulative wheel/touch px to complete the scroll-triggered zoom reveal. Short on purpose. */
+const SCROLL_ZOOM_PX = 180;
 
 export function LandingPage() {
   const [phase, setPhase] = useState<IntroPhase>("boot");
   const [plan, setPlan] = useState<"pending" | "full" | "short" | "reduce">("pending");
   const [skipVisible, setSkipVisible] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  // 0 → 1. The single source of truth for "how revealed is the main page",
+  // whether driven by a timed animation or scrubbed live by user input.
+  const revealProgress = useMotionValue(0);
+  const landingScale = useTransform(revealProgress, [0, 1], [prefersReducedMotion ? 1 : 1.06, 1]);
 
   useEffect(() => {
     const nextPlan = readIntroPlan();
@@ -24,6 +33,10 @@ export function LandingPage() {
         setPlan(nextPlan);
         if (nextPlan !== "full") {
           setPhase("reveal");
+          animate(revealProgress, 1, {
+            duration: (nextPlan === "reduce" ? INTRO_MS.reduced : INTRO_MS.returning) / 1000,
+            ease: EASE,
+          });
           return;
         }
         setPhase("blank");
@@ -43,11 +56,16 @@ export function LandingPage() {
         window.setTimeout(() => {
           markIntroComplete();
           setPhase("reveal");
+          animate(revealProgress, 1, {
+            duration: (INTRO_MS.doneAt - INTRO_MS.revealAt) / 1000,
+            ease: EASE,
+          });
         }, INTRO_MS.revealAt),
         window.setTimeout(() => setPhase("done"), INTRO_MS.doneAt),
       );
     }
     return () => timers.forEach((timer) => window.clearTimeout(timer));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -58,11 +76,73 @@ export function LandingPage() {
 
   const revealed = phase === "reveal" || phase === "done";
 
+  // Skip jumps straight into the same clean reveal animation the auto-timer
+  // uses, instead of cutting instantly to "done".
   const skip = () => {
+    if (phase !== "word") {
+      markIntroComplete();
+      setPhase("done");
+      setSkipVisible(false);
+      return;
+    }
     markIntroComplete();
-    setPhase("done");
     setSkipVisible(false);
+    setPhase("reveal");
+    const duration = (INTRO_MS.doneAt - INTRO_MS.revealAt) / 1000;
+    animate(revealProgress, 1, { duration, ease: EASE });
+    window.setTimeout(() => setPhase("done"), duration * 1000);
   };
+
+  // A short scroll, touch swipe, or navigation key press while the word is
+  // held zooms straight through it into the main page, scrubbed live with
+  // the gesture rather than playing a fixed-length animation.
+  useEffect(() => {
+    if (phase !== "word") return;
+    let acc = 0;
+    let finished = false;
+    let lastTouchY: number | null = null;
+
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      markIntroComplete();
+      setSkipVisible(false);
+      setPhase("done");
+    };
+
+    const bump = (delta: number) => {
+      if (delta <= 0 || finished) return;
+      acc = Math.min(SCROLL_ZOOM_PX, acc + delta);
+      revealProgress.set(acc / SCROLL_ZOOM_PX);
+      if (acc >= SCROLL_ZOOM_PX) finish();
+    };
+
+    const onWheel = (event: WheelEvent) => bump(event.deltaY);
+    const onTouchStart = (event: TouchEvent) => {
+      lastTouchY = event.touches[0]?.clientY ?? null;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const y = event.touches[0]?.clientY;
+      if (y == null || lastTouchY == null) return;
+      bump(lastTouchY - y);
+      lastTouchY = y;
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (["ArrowDown", "PageDown", " ", "Enter"].includes(event.key)) bump(SCROLL_ZOOM_PX);
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   return (
     <>
@@ -81,15 +161,12 @@ export function LandingPage() {
           Skip intro
         </button>
       ) : null}
-      <IntroOverlay phase={phase} plan={plan} />
-      <div
+      <IntroOverlay phase={phase} plan={plan} revealProgress={revealProgress} />
+      <motion.div
         className="nexus-landing"
         inert={revealed ? undefined : true}
         aria-hidden={revealed ? undefined : true}
-        style={{
-          opacity: revealed ? 1 : 0,
-          transition: "opacity 700ms cubic-bezier(0.22, 1, 0.36, 1)",
-        }}
+        style={{ opacity: revealProgress, scale: landingScale }}
       >
         <LandingNav />
         <main>
@@ -103,7 +180,7 @@ export function LandingPage() {
         <footer className="border-t border-white/10 px-4 py-8 text-center text-xs leading-5 text-muted sm:px-6">
           Nexus organises market information and personal notes for informational purposes only. It is not financial advice and it does not place trades.
         </footer>
-      </div>
+      </motion.div>
     </>
   );
 }

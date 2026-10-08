@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { BrowserFrame } from "@/components/landing/browser-frame";
+import { Reveal } from "@/components/landing/reveal";
 import { EASE } from "@/lib/motion";
 
 const CHAPTERS = [
@@ -95,12 +96,12 @@ export function ProductStory() {
         </h2>
         <div className="space-y-16 lg:hidden">
           {CHAPTERS.map((chapter) => (
-            <article key={chapter.id} className="space-y-5">
+            <Reveal key={chapter.id} as="article" className="space-y-5">
               <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
               <h3 className="text-3xl font-semibold tracking-tight">{chapter.heading}</h3>
               <p className="text-base leading-7 text-muted">{chapter.body}</p>
               <Shot chapter={chapter} />
-            </article>
+            </Reveal>
           ))}
         </div>
         <div className="hidden lg:grid lg:grid-cols-2 lg:gap-16">
@@ -111,8 +112,12 @@ export function ProductStory() {
                   <motion.div
                     key={chapter.id}
                     className={index === active ? "relative" : "pointer-events-none absolute inset-0"}
-                    animate={{ opacity: active === index ? 1 : 0 }}
-                    transition={{ duration: reduce ? 0 : 0.45, ease: EASE }}
+                    animate={{
+                      opacity: active === index ? 1 : 0,
+                      scale: active === index ? 1 : 0.96,
+                      y: active === index ? 0 : 14,
+                    }}
+                    transition={{ duration: reduce ? 0 : 0.55, ease: EASE }}
                     aria-hidden={active !== index}
                   >
                     <Shot chapter={chapter} />
@@ -131,9 +136,16 @@ export function ProductStory() {
                 }}
                 className="flex min-h-[80vh] flex-col justify-center py-16"
               >
-                <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
-                <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
-                <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
+                <motion.div
+                  initial={reduce ? false : { opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-35% 0px -35% 0px" }}
+                  transition={{ duration: reduce ? 0 : 0.6, ease: EASE }}
+                >
+                  <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
+                  <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
+                  <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
+                </motion.div>
               </article>
             ))}
           </div>

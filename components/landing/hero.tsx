@@ -1,10 +1,10 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { useRef, useState } from "react";
 import { BrowserFrame } from "@/components/landing/browser-frame";
+import { TransitionLink } from "@/components/transition/transition-link";
 import { EASE } from "@/lib/motion";
 
 function pointerTiltAllowed(pointerType: string) {
@@ -17,8 +17,21 @@ function pointerTiltAllowed(pointerType: string) {
 
 export function Hero() {
   const reduce = useReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+  const textY = useTransform(scrollYProgress, [0, 1], [0, -56]);
+  const textOpacity = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const imageY = useTransform(scrollYProgress, [0, 1], [0, -28]);
+  const imageScale = useTransform(scrollYProgress, [0, 1], [1, 0.94]);
+  const imageOpacity = useTransform(scrollYProgress, [0, 0.85], [1, 0]);
+  const glowScale = useTransform(scrollYProgress, [0, 1], [1, 1.3]);
+  const glowOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   const onMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!pointerTiltAllowed(event.pointerType) || !frameRef.current) return;
@@ -29,13 +42,18 @@ export function Hero() {
   };
 
   return (
-    <section id="product" className="relative overflow-hidden px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:pb-28 lg:pt-36">
-      <div
+    <section
+      id="product"
+      ref={sectionRef}
+      className="relative overflow-hidden px-4 pb-20 pt-28 sm:px-6 sm:pt-32 lg:pb-28 lg:pt-36"
+    >
+      <motion.div
         aria-hidden
         className="pointer-events-none absolute left-1/2 top-24 h-[420px] w-[min(900px,90vw)] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(130,92,237,0.16),transparent_68%)]"
+        style={reduce ? undefined : { scale: glowScale, opacity: glowOpacity }}
       />
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-10">
-        <div>
+        <motion.div style={reduce ? undefined : { y: textY, opacity: textOpacity }}>
           <p className="text-xs font-medium tracking-[0.22em] text-[#a78bfa]">CRYPTO INTELLIGENCE</p>
           <h1 className="mt-4 max-w-xl text-4xl font-semibold tracking-tight text-foreground sm:text-6xl sm:leading-[1.05]">
             Your investments, connected.
@@ -44,12 +62,12 @@ export function Hero() {
             Track your portfolio, follow the stories shaping your assets, and record every investment decision in one intelligent workspace.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link
+            <TransitionLink
               href="/app/for-you"
               className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-white hover:bg-primary-bright"
             >
               Open Nexus
-            </Link>
+            </TransitionLink>
             <a
               href="#features"
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-5 text-sm font-medium text-foreground hover:bg-white/5"
@@ -57,13 +75,16 @@ export function Hero() {
               Explore the features
             </a>
           </div>
-        </div>
-        <div
+        </motion.div>
+        <motion.div
           ref={frameRef}
           onPointerMove={onMove}
           onPointerLeave={() => setTilt({ x: 0, y: 0 })}
           className="relative"
-          style={{ perspective: 1200 }}
+          style={{
+            perspective: 1200,
+            ...(reduce ? {} : { y: imageY, scale: imageScale, opacity: imageOpacity }),
+          }}
         >
           <motion.div
             animate={reduce ? undefined : { rotateX: tilt.x, rotateY: tilt.y }}
@@ -86,7 +107,7 @@ export function Hero() {
               />
             </BrowserFrame>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

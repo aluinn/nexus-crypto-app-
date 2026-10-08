@@ -1,8 +1,10 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Bell, Bookmark, Newspaper, PieChart } from "lucide-react";
 import { SEED_NOTIFICATIONS } from "@/data/seed-notifications";
 import { formatRelativeTime } from "@/lib/format";
+import { listStagger } from "@/lib/motion";
 import { useNow } from "@/lib/use-now";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
@@ -15,6 +17,8 @@ const ICONS = {
 } as const;
 
 export function NotificationsView() {
+  const reduce = useReducedMotion();
+  const stagger = listStagger(Boolean(reduce));
   const [dismissed, setDismissed] = useStoredState(
     STORAGE_KEYS.dismissedNotifications,
     dismissedNotificationsSchema,
@@ -48,11 +52,20 @@ export function NotificationsView() {
           </button>
         </div>
       ) : (
-        <ul className="mt-6 space-y-3">
+        <motion.ul className="mt-6 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+          <AnimatePresence mode="popLayout" initial={false}>
           {visible.map((item) => {
             const Icon = ICONS[item.kind];
             return (
-              <li key={item.id} className="rounded-2xl border border-white/10 bg-panel p-4">
+              <motion.li
+                key={item.id}
+                layout
+                variants={stagger.item}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="rounded-2xl border border-white/10 bg-panel p-4"
+              >
                 <div className="flex items-start gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#1a1732] text-primary">
                     <Icon className="size-4" aria-hidden />
@@ -79,10 +92,11 @@ export function NotificationsView() {
                     </div>
                   </div>
                 </div>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+          </AnimatePresence>
+        </motion.ul>
       )}
     </div>
   );

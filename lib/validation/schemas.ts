@@ -79,6 +79,8 @@ export const savedStateSchema = z.object({
 
 export const dismissedNotificationsSchema = z.array(z.string()).max(100);
 
+export const interestsSchema = z.array(z.string().min(2).max(10)).max(5);
+
 export const timeRangeSchema = z.enum(TIME_RANGES);
 
 export const quoteSchema = z.object({

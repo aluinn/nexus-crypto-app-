@@ -39,11 +39,17 @@ export function Workflow() {
           />
           <ol className="relative grid gap-4 md:grid-cols-4">
             {STEPS.map((step, index) => (
-              <li key={step.title} className="rounded-2xl border border-white/10 bg-panel p-5">
+              <motion.li
+                key={step.title}
+                initial={reduce ? false : { opacity: 0, y: 16 }}
+                animate={reduce ? undefined : inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+                transition={{ duration: reduce ? 0 : 0.5, delay: reduce ? 0 : 0.15 + index * 0.1, ease: EASE }}
+                className="rounded-2xl border border-white/10 bg-panel p-5"
+              >
                 <p className="text-xs tracking-[0.16em] text-[#a78bfa]">0{index + 1}</p>
                 <h3 className="mt-3 text-base font-medium">{step.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted">{step.body}</p>
-              </li>
+              </motion.li>
             ))}
           </ol>
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Pencil, Plus, RefreshCw, Settings, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { AddHoldingDialog } from "@/components/portfolio/add-holding-dialog";
@@ -8,6 +9,7 @@ import { assetBySymbol } from "@/data/assets";
 import { SEED_HOLDINGS } from "@/data/seed-holdings";
 import { cn } from "@/lib/cn";
 import { formatClock, formatGbp, formatPercent, formatQuantity, formatSignedGbp } from "@/lib/format";
+import { listStagger } from "@/lib/motion";
 import { allocationPercent, holdingValue, portfolioTotal, valueChange } from "@/lib/portfolio/calc";
 import { STORAGE_KEYS } from "@/lib/storage/local";
 import { useStoredState } from "@/lib/storage/use-stored";
@@ -34,6 +36,8 @@ function sourceLabel(quotes: AssetQuote[]) {
 }
 
 export function PortfolioView() {
+  const reduce = useReducedMotion();
+  const stagger = listStagger(Boolean(reduce));
   const [holdings, setHoldings, ready] = useStoredState(STORAGE_KEYS.holdings, holdingsSchema, SEED_HOLDINGS);
   const [quotes, setQuotes] = useState<Record<string, AssetQuote>>({});
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -273,11 +277,20 @@ export function PortfolioView() {
           No holdings yet. Add an asset to calculate a portfolio value.
         </p>
       ) : (
-        <ul className="mt-3 space-y-3">
+        <motion.ul className="mt-3 space-y-3" variants={stagger.container} initial="hidden" animate="show">
+          <AnimatePresence mode="popLayout" initial={false}>
           {rows.map((row) => {
             const color = assetBySymbol(row.holding.symbol)?.color ?? "#9aa6bd";
             return (
-              <li key={row.holding.id} className="rounded-2xl border border-white/10 bg-panel p-4">
+              <motion.li
+                key={row.holding.id}
+                layout
+                variants={stagger.item}
+                initial="hidden"
+                animate="show"
+                exit="exit"
+                className="rounded-2xl border border-white/10 bg-panel p-4"
+              >
                 <div className="flex items-start gap-3">
                   <span
                     className="grid size-11 shrink-0 place-items-center rounded-full text-[11px] font-semibold"
@@ -330,10 +343,11 @@ export function PortfolioView() {
                     </div>
                   </div>
                 </div>
-              </li>
+              </motion.li>
             );
           })}
-        </ul>
+          </AnimatePresence>
+        </motion.ul>
       )}
 
       <AddHoldingDialog
