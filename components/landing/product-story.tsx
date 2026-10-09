@@ -1,11 +1,10 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useSpring, useTransform, type MotionValue } from "framer-motion";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import { BrowserFrame } from "@/components/landing/browser-frame";
 import { Reveal } from "@/components/landing/reveal";
-import { EASE } from "@/lib/motion";
 
 const CHAPTERS = [
   {
@@ -60,6 +59,18 @@ const CHAPTERS = [
   },
 ] as const;
 
+function useChapterStyle(progress: MotionValue<number>, index: number, total: number) {
+  const segment = 1 / total;
+  const start = index * segment;
+  const end = start + segment;
+  const fade = segment * 0.45;
+  const inputRange = [start - fade, start, end, end + fade];
+  const opacity = useTransform(progress, inputRange, [index === 0 ? 1 : 0, 1, 1, index === total - 1 ? 1 : 0]);
+  const y = useTransform(progress, inputRange, [20, 0, 0, -20]);
+  const scale = useTransform(progress, inputRange, [0.96, 1, 1, 0.96]);
+  return { opacity, y, scale };
+}
+
 function Shot({ chapter }: { chapter: (typeof CHAPTERS)[number] }) {
   return (
     <BrowserFrame>
@@ -77,26 +88,21 @@ function Shot({ chapter }: { chapter: (typeof CHAPTERS)[number] }) {
 
 export function ProductStory() {
   const reduce = useReducedMotion();
-  const [active, setActive] = useState(0);
-  const itemRefs = useRef<Array<HTMLElement | null>>([]);
+  const trackRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const nodes = itemRefs.current.filter((node): node is HTMLElement => node !== null);
-    if (nodes.length === 0) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visible) return;
-        const index = Number(visible.target.getAttribute("data-index"));
-        if (!Number.isNaN(index)) setActive(index);
-      },
-      { rootMargin: "-35% 0px -40% 0px", threshold: [0.25, 0.5, 0.75] },
-    );
-    nodes.forEach((node) => observer.observe(node));
-    return () => observer.disconnect();
-  }, []);
+  const { scrollYProgress } = useScroll({ target: trackRef, offset: ["start start", "end end"] });
+  const progress = useSpring(scrollYProgress, { stiffness: 220, damping: 32, mass: 0.4, restDelta: 0.0005 });
+
+  const total = CHAPTERS.length;
+  // CHAPTERS has a fixed length of 5, so these are unrolled rather than
+  // called from inside a .map callback (hooks can't run inside callbacks).
+  const styles = [
+    useChapterStyle(progress, 0, total),
+    useChapterStyle(progress, 1, total),
+    useChapterStyle(progress, 2, total),
+    useChapterStyle(progress, 3, total),
+    useChapterStyle(progress, 4, total),
+  ];
 
   return (
     <section id="features" className="px-4 py-8 sm:px-6" aria-labelledby="features-heading">
@@ -104,72 +110,70 @@ export function ProductStory() {
         <h2 id="features-heading" className="sr-only">
           Product features
         </h2>
-        <div className="space-y-16 lg:hidden">
-          {CHAPTERS.map((chapter) => (
-            <Reveal key={chapter.id} as="article" className="space-y-5">
-              <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
-              <h3 className="text-3xl font-semibold tracking-tight">{chapter.heading}</h3>
-              <p className="text-base leading-7 text-muted">{chapter.body}</p>
-              <Shot chapter={chapter} />
-            </Reveal>
-          ))}
-        </div>
-        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-16">
-          <div className="relative">
-            <div className="sticky top-1/2 -translate-y-1/2">
-              <div className="relative">
-                {CHAPTERS.map((chapter, index) => (
-                  <motion.div
-                    key={chapter.id}
-                    className={index === active ? "relative" : "pointer-events-none absolute inset-0"}
-                    animate={{
-                      opacity: active === index ? 1 : 0,
-                      scale: active === index ? 1 : 0.96,
-                      y: active === index ? 0 : 14,
-                    }}
-                    transition={{ duration: reduce ? 0 : 0.55, ease: EASE }}
-                    aria-hidden={active !== index}
-                  >
-                    <Shot chapter={chapter} />
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-          <div className="relative">
-            <div className="sticky top-1/2 -translate-y-1/2">
-              <div className="relative">
-                {CHAPTERS.map((chapter, index) => (
-                  <motion.div
-                    key={chapter.id}
-                    className={index === active ? "relative" : "pointer-events-none absolute inset-0"}
-                    animate={{
-                      opacity: active === index ? 1 : 0,
-                      y: active === index ? 0 : 14,
-                    }}
-                    transition={{ duration: reduce ? 0 : 0.45, ease: EASE }}
-                    aria-hidden={active !== index}
-                  >
-                    <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
-                    <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
-                    <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-            {CHAPTERS.map((chapter, index) => (
-              <div
-                key={chapter.id}
-                data-index={index}
-                ref={(node) => {
-                  itemRefs.current[index] = node;
-                }}
-                className="h-[80vh]"
-                aria-hidden
-              />
+
+        {reduce ? (
+          <div className="space-y-16">
+            {CHAPTERS.map((chapter) => (
+              <article key={chapter.id} className="space-y-5">
+                <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
+                <h3 className="text-3xl font-semibold tracking-tight">{chapter.heading}</h3>
+                <p className="text-base leading-7 text-muted">{chapter.body}</p>
+                <Shot chapter={chapter} />
+              </article>
             ))}
           </div>
-        </div>
+        ) : (
+          <>
+            <div className="space-y-16 lg:hidden">
+              {CHAPTERS.map((chapter) => (
+                <Reveal key={chapter.id} as="article" className="space-y-5">
+                  <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
+                  <h3 className="text-3xl font-semibold tracking-tight">{chapter.heading}</h3>
+                  <p className="text-base leading-7 text-muted">{chapter.body}</p>
+                  <Shot chapter={chapter} />
+                </Reveal>
+              ))}
+            </div>
+
+            <div ref={trackRef} className="hidden lg:grid lg:grid-cols-2 lg:gap-16">
+              <div className="relative">
+                <div className="sticky top-1/2 -translate-y-1/2">
+                  <div className="relative aspect-[2110/1192]">
+                    {CHAPTERS.map((chapter, index) => (
+                      <motion.div
+                        key={chapter.id}
+                        className="absolute inset-0"
+                        style={{ opacity: styles[index].opacity, y: styles[index].y, scale: styles[index].scale }}
+                      >
+                        <Shot chapter={chapter} />
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="relative">
+                <div className="sticky top-1/2 -translate-y-1/2">
+                  <div className="relative min-h-[260px]">
+                    {CHAPTERS.map((chapter, index) => (
+                      <motion.div
+                        key={chapter.id}
+                        className="absolute inset-0"
+                        style={{ opacity: styles[index].opacity, y: styles[index].y }}
+                      >
+                        <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
+                        <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
+                        <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+                {CHAPTERS.map((chapter) => (
+                  <div key={chapter.id} className="h-[80vh]" aria-hidden />
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </section>
   );
