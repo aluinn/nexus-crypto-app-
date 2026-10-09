@@ -59,16 +59,25 @@ const CHAPTERS = [
   },
 ] as const;
 
-function useChapterStyle(progress: MotionValue<number>, index: number, total: number) {
-  const segment = 1 / total;
-  const start = index * segment;
-  const end = start + segment;
-  const fade = segment * 0.45;
-  const inputRange = [start - fade, start, end, end + fade];
-  const opacity = useTransform(progress, inputRange, [index === 0 ? 1 : 0, 1, 1, index === total - 1 ? 1 : 0]);
-  const y = useTransform(progress, inputRange, [20, 0, 0, -20]);
-  const scale = useTransform(progress, inputRange, [0.96, 1, 1, 0.96]);
-  return { opacity, y, scale };
+const HOLD = 0.55;
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+// A push transition: each chapter rests in place, then slides fully out the
+// top while the next one slides fully in from the bottom at the same rate.
+// The two always tile the container exactly, so nothing is ever translucent
+// or double-exposed — unlike a crossfade, which blends two layers at once.
+function offsetToPercent(offset: number) {
+  if (offset >= 0) return clamp(offset / (1 - HOLD), 0, 1) * 100;
+  if (offset >= -HOLD) return 0;
+  return clamp((offset + HOLD) / (1 - HOLD), -1, 0) * 100;
+}
+
+function useChapterStyle(continuousIndex: MotionValue<number>, index: number) {
+  const y = useTransform(continuousIndex, (value) => `${offsetToPercent(index - value)}%`);
+  return { y };
 }
 
 function Shot({ chapter }: { chapter: (typeof CHAPTERS)[number] }) {
@@ -92,16 +101,16 @@ export function ProductStory() {
 
   const { scrollYProgress } = useScroll({ target: trackRef, offset: ["start start", "end end"] });
   const progress = useSpring(scrollYProgress, { stiffness: 220, damping: 32, mass: 0.4, restDelta: 0.0005 });
+  const continuousIndex = useTransform(progress, (value) => value * CHAPTERS.length);
 
-  const total = CHAPTERS.length;
   // CHAPTERS has a fixed length of 5, so these are unrolled rather than
   // called from inside a .map callback (hooks can't run inside callbacks).
   const styles = [
-    useChapterStyle(progress, 0, total),
-    useChapterStyle(progress, 1, total),
-    useChapterStyle(progress, 2, total),
-    useChapterStyle(progress, 3, total),
-    useChapterStyle(progress, 4, total),
+    useChapterStyle(continuousIndex, 0),
+    useChapterStyle(continuousIndex, 1),
+    useChapterStyle(continuousIndex, 2),
+    useChapterStyle(continuousIndex, 3),
+    useChapterStyle(continuousIndex, 4),
   ];
 
   return (
@@ -138,13 +147,9 @@ export function ProductStory() {
             <div ref={trackRef} className="hidden lg:grid lg:grid-cols-2 lg:gap-16">
               <div className="relative">
                 <div className="sticky top-1/2 -translate-y-1/2">
-                  <div className="relative aspect-[2110/1192]">
+                  <div className="relative aspect-[2110/1192] overflow-hidden rounded-2xl">
                     {CHAPTERS.map((chapter, index) => (
-                      <motion.div
-                        key={chapter.id}
-                        className="absolute inset-0"
-                        style={{ opacity: styles[index].opacity, y: styles[index].y, scale: styles[index].scale }}
-                      >
+                      <motion.div key={chapter.id} className="absolute inset-0" style={{ y: styles[index].y }}>
                         <Shot chapter={chapter} />
                       </motion.div>
                     ))}
@@ -153,13 +158,9 @@ export function ProductStory() {
               </div>
               <div className="relative">
                 <div className="sticky top-1/2 -translate-y-1/2">
-                  <div className="relative min-h-[260px]">
+                  <div className="relative min-h-[260px] overflow-hidden">
                     {CHAPTERS.map((chapter, index) => (
-                      <motion.div
-                        key={chapter.id}
-                        className="absolute inset-0"
-                        style={{ opacity: styles[index].opacity, y: styles[index].y }}
-                      >
+                      <motion.div key={chapter.id} className="absolute inset-0" style={{ y: styles[index].y }}>
                         <p className="text-xs font-medium tracking-[0.2em] text-[#a78bfa]">{chapter.kicker}</p>
                         <h3 className="mt-3 text-4xl font-semibold tracking-tight">{chapter.heading}</h3>
                         <p className="mt-4 max-w-md text-base leading-7 text-muted">{chapter.body}</p>
